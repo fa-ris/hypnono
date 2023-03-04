@@ -1,8 +1,7 @@
-import os, subprocess, datetime, time
+import datetime, time
+import threading
 import pygame
 import speech_recognition as sr
-import re
-import threading
 
 '''
 Check if string contains time value in it and return string of it if it does.
@@ -105,15 +104,28 @@ def contians_wn(in_str):
 song = ["song", "play", "music"]
 story = ["read", "story", "book", "tale", "surprise", "tell"]
 def sound_player(option):
-    return -1
+    pygame.init()
+    pygame.mixer.init()
+    if option == 0:
+        sound = pygame.mixer.Sound("audiocheck.net_whitenoise.wav")
+    elif option == 1:
+        sound = pygame.mixer.Sound("PinkPanther60.wav")
+    elif option == 2:
+        sound = pygame.mixer.Sound("The_Californian_s_Tale_-_By_Mark_Twain.mp3")
+    else:
+        return -1
+    sound.play()
+    while pygame.mixer.get_busy():
+        pygame.time.delay(100)
+    return 1
 
 '''
 Main speech recognition function.
 '''
 conf_threshold = 0.9
-alarm = ["alarm", "wake me up", "go off at", "set an alarm"]
-morning = ["a.m.", "am", "a.m", "in the morning", "tomorrow morning", ":"]
-night = ["p.m.", "pm", "p.m", "in the evening", "tonight", ":"]
+alarm = ["alarm", "wake", "set"]
+morning = ["a.m.", "am", "a.m", "morning"]
+night = ["p.m.", "pm", "p.m", "evening", "tonight"]
 
 r = sr.Recognizer()
 with sr.Microphone() as source:
@@ -126,6 +138,7 @@ with sr.Microphone() as source:
                 continue
             confidence = text["alternative"][0]["confidence"]
             in_text = text["alternative"][0]["transcript"]
+            print(in_text)
             if confidence < conf_threshold:
                 print("Try again!")
                 continue
@@ -133,17 +146,16 @@ with sr.Microphone() as source:
                 if contains_word(in_text, alarm) == True:
                     if contains_word(in_text, morning) == True:
                         alarm_time = contains_time(in_text)
-                        #alarm_clock(alarm_time, 0)
                         thrm = threading.Thread(target=alarm_clock, args=(alarm_time, 0))
                         thrm.start()
                         print("Just set an alarm for tomorrow morning!")
                     elif contains_word(in_text, night) == True:
                         alarm_time = contains_time(in_text)
-                        #alarm_clock(alarm_time, 1)
                         thre = threading.Thread(target=alarm_clock, args=(alarm_time, 1))
                         thre.start()
                         print("Just set an alarm for the evening!")
-                    elif contians_wn(in_text) == True:
+                else:
+                    if contians_wn(in_text) == True:
                         sound_player(0)
                     elif contains_word(in_text, song) == True:
                         sound_player(1)
