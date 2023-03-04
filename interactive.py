@@ -2,6 +2,7 @@ import os, subprocess, datetime, time
 import pygame
 import speech_recognition as sr
 import re
+import threading
 
 '''
 Check if string contains time value in it and return string of it if it does.
@@ -69,10 +70,11 @@ def alarm_clock(in_time, type):
     s = (now.hour * 3600) + (now.minute * 60) + now.second
     in_time = in_time.split(":")
     new_time = [int(in_time[0]), int(in_time[1])]
-    if type == 1:
+    if type == 1 and not new_time[0] > 12:
         new_time[0] += 12
     a = (new_time[0] * 3600) + (new_time[1] * 60)
-    ring_in = (a - s) if (a - s < 84600) else (s - a + 84600)
+    print(new_time)
+    ring_in = (a - s) if (a - s >= 0) else (a - s + 86400)
     for i in range(ring_in):
         time.sleep(1)
     alarm = pygame.mixer.Sound("StarWars3.wav")
@@ -82,10 +84,26 @@ def alarm_clock(in_time, type):
     return -1
 
 '''
+Function to check if user asked for white noise.
+'''
+white_noise = ["white noise"]
+def contians_wn(in_str):
+    if len(in_str) == 0:
+        return False
+    to_check = in_str.split()
+    for i in range(len(to_check) - 1):
+        to_to_check = to_check[i] + " " + to_check[i + 1]
+        if to_to_check in white_noise:
+            return True
+    return False
+
+'''
 0 = White noise
 1 = Song
 2 = Story
 '''
+song = ["song", "play", "music"]
+story = ["read", "story", "book", "tale", "surprise", "tell"]
 def sound_player(option):
     return -1
 
@@ -115,12 +133,22 @@ with sr.Microphone() as source:
                 if contains_word(in_text, alarm) == True:
                     if contains_word(in_text, morning) == True:
                         alarm_time = contains_time(in_text)
-                        alarm_clock(alarm_time, 0)
-                        break
+                        #alarm_clock(alarm_time, 0)
+                        thrm = threading.Thread(target=alarm_clock, args=(alarm_time, 0))
+                        thrm.start()
+                        print("Just set an alarm for tomorrow morning!")
                     elif contains_word(in_text, night) == True:
                         alarm_time = contains_time(in_text)
-                        alarm_clock(alarm_time, 1)
-                        break
+                        #alarm_clock(alarm_time, 1)
+                        thre = threading.Thread(target=alarm_clock, args=(alarm_time, 1))
+                        thre.start()
+                        print("Just set an alarm for the evening!")
+                    elif contians_wn(in_text) == True:
+                        sound_player(0)
+                    elif contains_word(in_text, song) == True:
+                        sound_player(1)
+                    elif contains_word(in_text, story) == True:
+                        sound_player(2)
             else:
                 print("I don't understand that format, could you say that again?")
                 continue
