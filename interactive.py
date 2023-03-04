@@ -1,14 +1,12 @@
-import os, subprocess, datetime
+import os, subprocess, datetime, time
 import pygame
 import speech_recognition as sr
 import re
 
 '''
-Check if string contains time value in it.
+Check if string contains time value in it and return string of it if it does.
 '''
 def contains_time(in_str):
-    print("---------")
-    print(in_str)
     if len(in_str) == 0:
         return False
     to_check = in_str.split()
@@ -63,8 +61,24 @@ Alarm clock function.
 0 = AM
 1 = PM
 '''
-def alarm_clock(time, type):
-    time = time.split(":")
+alarm_file = ""
+def alarm_clock(in_time, type):
+    pygame.init()
+    pygame.mixer.init()
+    now = datetime.datetime.now()
+    s = (now.hour * 3600) + (now.minute * 60) + now.second
+    in_time = in_time.split(":")
+    new_time = [int(in_time[0]), int(in_time[1])]
+    if type == 1:
+        new_time[0] += 12
+    a = (new_time[0] * 3600) + (new_time[1] * 60)
+    ring_in = (a - s) if (a - s < 84600) else (s - a + 84600)
+    for i in range(ring_in):
+        time.sleep(1)
+    alarm = pygame.mixer.Sound("StarWars3.wav")
+    alarm.play()
+    while pygame.mixer.get_busy():
+        pygame.time.delay(100)
     return -1
 
 '''
@@ -94,22 +108,21 @@ with sr.Microphone() as source:
                 continue
             confidence = text["alternative"][0]["confidence"]
             in_text = text["alternative"][0]["transcript"]
-            print(in_text)
             if confidence < conf_threshold:
+                print("Try again!")
                 continue
             if contains_snaur(in_text):
                 if contains_word(in_text, alarm) == True:
                     if contains_word(in_text, morning) == True:
-                        print("Setting alarm for the morning")
                         alarm_time = contains_time(in_text)
                         alarm_clock(alarm_time, 0)
                         break
                     elif contains_word(in_text, night) == True:
-                        print("Setting alarm for the evening")
                         alarm_time = contains_time(in_text)
                         alarm_clock(alarm_time, 1)
                         break
             else:
+                print("I don't understand that format, could you say that again?")
                 continue
         except sr.UnknownValueError:
             print("Could you repeat that?")
